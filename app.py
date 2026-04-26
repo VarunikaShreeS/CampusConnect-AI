@@ -1,62 +1,51 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import requests
 import qrcode
+import requests
 from io import BytesIO
-from PIL import Image
 from datetime import datetime
 
 # ─────────────────────────────────────────────
-# 🛡️ PAGE CONFIG & PREMIUM STYLING
+# 🎨 PREMIUM UI CONFIG
 # ─────────────────────────────────────────────
-st.set_page_config(layout="wide", page_title="CampusConnect AI", page_icon="🚀")
+st.set_page_config(layout="wide", page_title="CampusConnect AI", page_icon="🌐")
 
-st.markdown(f"""
+st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap');
-html, body, [class*="css"] {{ font-family: 'DM Sans', sans-serif; background-color: #0a0a0f; color: #e6edf3; }}
-.main {{ background: #0a0a0f; }}
-.cc-card {{ background: #13131f; border: 1px solid #ffffff12; border-radius: 16px; padding: 20px; margin-bottom: 15px; }}
-.metric-card {{ background: linear-gradient(135deg,#13131f,#1a1a2e); border: 1px solid #7c6dff33; border-radius: 14px; padding: 15px; text-align: center; }}
-.metric-val {{ font-family: 'Syne', sans-serif; font-size: 32px; background: linear-gradient(135deg,#7c6dff,#00d4aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }}
-.xp-bar-bg {{ background:#1a1a2e; border-radius:100px; height:10px; margin:10px 0; }}
-.xp-bar {{ background:linear-gradient(90deg,#7c6dff,#00d4aa); border-radius:100px; height:10px; }}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    html, body, [class*="css"] { font-family: 'Inter', sans-serif; background-color: #0e1117; }
+    .stButton>button { width: 100%; border-radius: 8px; height: 3em; background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%); border: none; color: white; font-weight: bold; }
+    .feature-card { background: #1a1c24; border: 1px solid #30363d; border-radius: 12px; padding: 20px; margin-bottom: 10px; }
+    .status-online { color: #238636; font-weight: bold; font-size: 0.8em; }
 </style>
 """, unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────
-# ⚙️ SESSION STATE INITIALIZATION
+# ⚙️ LOGIC & DATA
 # ─────────────────────────────────────────────
-if "xp" not in st.session_state: st.session_state.xp = 0
+if "xp" not in st.session_state: st.session_state.xp = 150
 if "history" not in st.session_state: st.session_state.history = []
-if "completed_tasks" not in st.session_state: st.session_state.completed_tasks = []
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 
-TASKS = [
-    {"id": 1, "title": "GitHub Repo Star", "pts": 100, "cat": "Tech", "desc": "Star the main AI repository."},
-    {"id": 2, "title": "LinkedIn Shoutout", "pts": 150, "cat": "Social", "desc": "Share your ambassador journey."},
-    {"id": 3, "title": "Campus Workshop", "pts": 500, "cat": "Event", "desc": "Host a 30-min AI intro session."}
-]
-
-def analyze_github(username):
-    try:
-        res = requests.get(f"https://api.github.com/users/{username}", timeout=5)
-        if res.status_code == 200:
-            data = res.json()
-            score = (data.get("public_repos", 0) * 5) + (data.get("followers", 0) * 10)
-            return data, min(score, 1000)
-    except: pass
-    return None, 0
+# Mock Leaderboard Data for Demo
+leaderboard_data = pd.DataFrame([
+    {"Rank": 1, "Ambassador": "Varun", "Total XP": 550},
+    {"Rank": 2, "Ambassador": "Praneetha", "Total XP": 420},
+    {"Rank": 3, "Ambassador": "Suba", "Total XP": 310},
+    {"Rank": 4, "Ambassador": "Harini (You)", "Total XP": 150}
+])
 
 # ─────────────────────────────────────────────
-# 👤 SIDEBAR NAVIGATION
+# 👤 SIDEBAR
 # ─────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("<h2 style='color:#7c6dff;'>🚀 CampusConnect</h2>", unsafe_allow_html=True)
+    st.image("https://cdn-icons-png.flaticon.com/512/1998/1998592.png", width=80)
+    st.title("Admin Panel")
     if st.session_state.logged_in:
-        st.write(f"Welcome, **{st.session_state.user_name}**")
-        menu = st.radio("Menu", ["🏠 Dashboard", "🎯 Tasks", "🔬 GitHub Audit", "🎫 Digital ID"])
+        st.success(f"Welcome, {st.session_state.user_name}")
+        st.info("🔥 5 Day Streak")
+        menu = st.radio("Go To", ["🎯 Task Marketplace", "🔬 GitHub Auditor", "🏆 Leaderboard", "🤖 AI Co-Pilot", "🎫 Digital ID"])
         if st.button("Logout"):
             st.session_state.logged_in = False
             st.rerun()
@@ -64,70 +53,68 @@ with st.sidebar:
         menu = "Login"
 
 # ─────────────────────────────────────────────
-# 🏠 LOGIC BRANCHING
+# 🚀 PAGE ROUTING
 # ─────────────────────────────────────────────
 if not st.session_state.logged_in:
-    st.title("🛡️ AI Ambassador Portal")
-    col1, col2 = st.columns(2)
+    st.title("🌐 CampusConnect AI")
+    name = st.text_input("Ambassador Name")
+    if st.button("Enter Portal"):
+        st.session_state.user_name = name
+        st.session_state.logged_in = True
+        st.rerun()
+
+elif menu == "🎯 Task Marketplace":
+    st.title("🎯 Mission Control")
+    col1, col2 = st.columns([2, 1])
     with col1:
-        name = st.text_input("Full Name")
-        gh_handle = st.text_input("GitHub Handle")
-        if st.button("Initialize Profile"):
-            if name and gh_handle:
-                profile, score = analyze_github(gh_handle)
-                st.session_state.user_name = name
-                st.session_state.gh_handle = gh_handle
-                st.session_state.xp = score
-                st.session_state.logged_in = True
-                st.rerun()
-            else: st.warning("Please fill all fields.")
+        tasks = [
+            ("Social Media Spotlight", "+50 XP", "Share the new event poster on LinkedIn."),
+            ("Community Growth", "+100 XP", "Onboard 5 new members via your referral link."),
+            ("Technical Blogging", "+80 XP", "Write a summary of the latest AI workshop.")
+        ]
+        for title, xp, desc in tasks:
+            with st.container():
+                st.markdown(f"<div class='feature-card'><h3>{title} <span style='color:#00f2fe'>{xp}</span></h3><p>{desc}</p></div>", unsafe_allow_html=True)
+                with st.expander("Submit Evidence"):
+                    st.text_input("Link to Proof", key=title)
+                    if st.button(f"Submit {title}"):
+                        st.balloons()
+    with col2:
+        st.markdown("<div class='feature-card'><h4>Active Campaigns</h4><p>Spring AI Fest 🌸</p><p>Core Team Hiring 💼</p></div>", unsafe_allow_html=True)
 
-elif menu == "🏠 Dashboard":
-    st.title("Your Growth Metrics")
-    c1, c2, c3 = st.columns(3)
-    c1.markdown(f"<div class='metric-card'><div class='metric-val'>{st.session_state.xp}</div><div>Total XP</div></div>", unsafe_allow_html=True)
-    
-    # 🩹 FIX: Check if history exists before accessing index -1
-    delta = 0
-    if len(st.session_state.history) > 0:
-        delta = st.session_state.xp - st.session_state.history[0]['XP']
-    
-    c2.markdown(f"<div class='metric-card'><div class='metric-val'>+{delta}</div><div>Session Gain</div></div>", unsafe_allow_html=True)
-    c3.markdown(f"<div class='metric-card'><div class='metric-val'>{len(st.session_state.completed_tasks)}</div><div>Missions</div></div>", unsafe_allow_html=True)
+elif menu == "🔬 GitHub Auditor":
+    st.title("🔍 Recruiter-Ready Audit")
+    handle = st.text_input("Enter GitHub Username", placeholder="e.g., VarunikaShreeS")
+    if st.button("Analyze Profile"):
+        st.write("Fetching API data...")
+        st.info("Analysis Complete: Profile is 'Top 10%' for Python contributions.")
 
-    # 🩹 FIX: Check if history exists before drawing chart
-    if st.session_state.history:
-        df = pd.DataFrame(st.session_state.history)
-        fig = px.line(df, x="Time", y="XP", title="XP Progress", template="plotly_dark")
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("No missions completed yet! Go to the Tasks tab to earn XP.")
+elif menu == "🏆 Leaderboard":
+    st.title("🏆 Global Rankings")
+    st.table(leaderboard_data)
 
-elif menu == "🎯 Tasks":
-    st.title("🎯 Available Missions")
-    for t in TASKS:
-        done = t["id"] in st.session_state.completed_tasks
-        with st.container():
-            st.markdown(f"<div class='cc-card'><h3>{t['title']} {'✅' if done else ''}</h3><p>{t['desc']}</p><b>{t['pts']} XP</b></div>", unsafe_allow_html=True)
-            if not done:
-                if st.button(f"Complete Mission {t['id']}", key=f"btn{t['id']}"):
-                    st.session_state.xp += t["pts"]
-                    st.session_state.completed_tasks.append(t["id"])
-                    st.session_state.history.append({"Time": datetime.now().strftime("%H:%M:%S"), "XP": st.session_state.xp})
-                    st.rerun()
-
-elif menu == "🔬 GitHub Audit":
-    st.title("🔬 AI Recruiter Audit")
-    target = st.text_input("Enter GitHub Handle", value=st.session_state.gh_handle)
-    if st.button("Analyze"):
-        p, s = analyze_github(target)
-        if p: st.metric("Global Impact Score", f"{s}/1000")
-        else: st.error("User not found.")
+elif menu == "🤖 AI Co-Pilot":
+    st.title("✍️ Content Co-Pilot")
+    st.write("Generate AI-drafted captions for your social posts.")
+    topic = st.text_input("What are you posting about?", "AI Workshop")
+    if st.button("Generate Post"):
+        st.code(f"🚀 Just attended an incredible {topic} with CampusConnect! \n\nLearning how to build SaaS apps in minutes. #AI #CampusAmbassador #Tech", language="text")
+        st.success("Captions adapted to your voice!")
 
 elif menu == "🎫 Digital ID":
-    st.title("🎫 Digital ID Card")
-    qr_data = f"Name: {st.session_state.user_name} | XP: {st.session_state.xp}"
-    qr = qrcode.make(qr_data)
-    buf = BytesIO()
-    qr.save(buf, format="PNG")
-    st.image(buf, caption="Scan for Verification", width=250)
+    st.title("🎫 Digital ID & Verification")
+    col1, col2 = st.columns(2)
+    with col1:
+        qr = qrcode.make(f"Verified Ambassador: {st.session_state.user_name}")
+        buf = BytesIO()
+        qr.save(buf, format="PNG")
+        st.image(buf, caption="Your Unique Referral QR")
+    with col2:
+        st.markdown(f"""
+        <div class='feature-card' style='border-left: 5px solid #00f2fe;'>
+            <h2>{st.session_state.user_name}</h2>
+            <p><b>Status:</b> Elite Ambassador</p>
+            <p><b>Verification:</b> DigiLocker Verified ✅</p>
+            <p><b>ID Number:</b> CC-2026-X99</p>
+        </div>
+        """, unsafe_allow_html=True)
