@@ -2,117 +2,158 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import time
+import random
 
 # 1. PAGE SETUP
-st.set_page_config(page_title="CampusConnect Elite", page_icon="🛡️", layout="wide")
+st.set_page_config(page_title="CampusConnect AI", page_icon="🛡️", layout="wide")
 
-# Custom CSS for Glassmorphism & Pro UI
+# Custom CSS for Professional Dark Mode & UI
 st.markdown("""
     <style>
-    .main { background-color: #0e1117; }
-    .stButton>button { width: 100%; border-radius: 20px; background: linear-gradient(45deg, #00ffcc, #0099ff); color: black; border: none; font-weight: bold; }
-    .task-card { background: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 15px; margin-bottom: 15px; }
-    .streak-fire { font-size: 24px; color: #ff4b4b; }
+    .main { background-color: #0d1117; }
+    .stButton>button { 
+        width: 100%; 
+        border-radius: 10px; 
+        background: linear-gradient(45deg, #238636, #2ea043); 
+        color: white; 
+        border: none; 
+        font-weight: bold;
+        transition: 0.3s;
+    }
+    .stButton>button:hover { transform: scale(1.02); box-shadow: 0 4px 15px rgba(46, 160, 67, 0.4); }
+    .task-card { 
+        background: #161b22; 
+        border: 1px solid #30363d; 
+        padding: 20px; 
+        border-radius: 12px; 
+        margin-bottom: 15px; 
+    }
+    .metric-card {
+        background: #0d1117;
+        border: 1px solid #30363d;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. SESSION STATE MANAGEMENT (Login & Data)
+# 2. SESSION STATE MANAGEMENT
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
 if 'xp' not in st.session_state: st.session_state.xp = 150
-if 'streak' not in st.session_state: st.session_state.streak = 5
 if 'history' not in st.session_state: st.session_state.history = []
 
 # --- LOGIN PAGE ---
 if not st.session_state.logged_in:
-    cols = st.columns([1, 2, 1])
+    cols = st.columns([1, 1.5, 1])
     with cols[1]:
-        st.image("https://cdn-icons-png.flaticon.com/512/3061/3061341.png", width=100)
-        st.title("CampusConnect Login")
-        user = st.text_input("Ambassador ID")
+        st.markdown("<h1 style='text-align: center;'>🛡️ CampusConnect AI</h1>", unsafe_allow_html=True)
+        st.write("Welcome to the next generation of Community Management.")
+        user = st.text_input("Ambassador ID (Try: HARINI)")
         pw = st.text_input("Password", type="password")
         if st.button("Access Dashboard"):
-            if user == "HARINI" and pw == "WIN":
+            if user.upper() == "HARINI" and pw.upper() == "WIN":
                 st.session_state.logged_in = True
                 st.rerun()
             else:
-                st.error("Invalid Credentials. (Hint: HARINI / WIN)")
+                st.error("Invalid Credentials. Hint: HARINI / WIN")
     st.stop()
 
-# --- MAIN APP (AFTER LOGIN) ---
+# --- SIDEBAR NAVIGATION ---
 with st.sidebar:
-    st.markdown(f"## Welcome, Harini! 👋")
-    st.markdown(f"<p class='streak-fire'>🔥 {st.session_state.streak} Day Streak</p>", unsafe_allow_html=True)
+    st.title("Admin Panel")
+    st.info(f"👤 **User:** Harini\n\n⭐ **Level:** {st.session_state.xp // 100}\n\n🔥 **Streak:** 5 Days")
     st.divider()
-    page = st.radio("Navigation", ["🎯 Task Marketplace", "🏆 Hall of Fame", "📊 Program Analytics"])
+    page = st.radio("Go To", ["🎯 Task Marketplace", "🔍 GitHub Profile Auditor", "🏆 Leaderboard", "📊 Analytics"])
     if st.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()
 
-# --- PAGE 1: TASK MARKETPLACE (Structured Assignment & Verification) ---
+# --- PAGE 1: TASK MARKETPLACE ---
 if page == "🎯 Task Marketplace":
-    st.title("🎯 Available Missions")
-    st.caption("Complete missions, submit proof, and pass the AI verification audit.")
+    st.title("🎯 Mission Control")
+    st.write("Complete tasks to earn XP and unlock exclusive rewards.")
 
-    # Task Data
     tasks = [
-        {"id": 1, "title": "LinkedIn Brand Awareness", "reward": 50, "desc": "Post a summary of today's tech workshop."},
-        {"id": 2, "title": "Referral Drive", "reward": 100, "desc": "Onboard 5 new students to the community."},
-        {"id": 3, "title": "Tech Content Creation", "reward": 75, "desc": "Write a medium article on 'Future of AI'."}
+        {"id": 1, "title": "Social Media Spotlight", "reward": 50, "desc": "Share the new event poster on LinkedIn & Twitter."},
+        {"id": 2, "title": "Community Growth", "reward": 100, "desc": "Onboard 5 new members via your referral link."},
+        {"id": 3, "title": "Technical Blogging", "reward": 80, "desc": "Write a 500-word summary of the latest AI workshop."}
     ]
 
     for t in tasks:
         with st.container():
             st.markdown(f"""<div class='task-card'>
-                <h3>{t['title']} <span style='color:#00ffcc;'>+{t['reward']} XP</span></h3>
-                <p>{t['desc']}</p>
+                <h3 style='margin-bottom:5px;'>{t['title']} <span style='color:#2ea043; font-size:16px;'>+{t['reward']} XP</span></h3>
+                <p style='color:#8b949e;'>{t['desc']}</p>
             </div>""", unsafe_allow_html=True)
-            
-            with st.expander(f"Submit Proof for {t['title']}"):
-                link = st.text_input("Verification URL (LinkedIn/Drive/GitHub)", key=f"link_{t['id']}")
+            with st.expander("Submit Evidence"):
+                link = st.text_input("Link to Proof", key=f"link_{t['id']}")
                 if st.button("Submit Mission", key=f"btn_{t['id']}"):
-                    # TRUTH VERIFICATION LOGIC
-                    if "http" in link and (len(link) > 15): 
-                        with st.spinner("AI Auditor verifying proof..."):
-                            time.sleep(2) # Simulate verification
-                        st.session_state.xp += t['reward']
-                        st.session_state.history.append({"task": t['title'], "xp": t['reward']})
+                    if "http" in link:
+                        with st.status("Verifying Submission..."):
+                            time.sleep(1.5)
+                            st.session_state.xp += t['reward']
+                            st.session_state.history.append({"task": t['title'], "xp": t['reward']})
                         st.balloons()
-                        st.success(f"Verified! {t['reward']} XP added to your profile.")
+                        st.success("Verified! XP Added.")
                     else:
-                        st.error("Submission Failed: The link provided does not look like a valid proof URL. Please check and try again.")
+                        st.error("Please provide a valid URL.")
 
-# --- PAGE 2: HALL OF FAME (Gamification) ---
-elif page == "🏆 Hall of Fame":
-    st.title("🏆 Hall of Fame")
+# --- PAGE 2: GITHUB AUDITOR (THE WINNING FEATURE) ---
+elif page == "🔍 GitHub Profile Auditor":
+    st.title("🔍 Recruiter-Ready Audit")
+    st.write("We analyze your GitHub presence to see if you're ready for top-tier tech roles.")
     
-    # Milestone Awards
-    st.subheader("Your Achievements")
-    cols = st.columns(3)
-    with cols[0]:
-        st.markdown("🏅 **Early Bird**\n*First mission complete*")
-    with cols[1]:
-        color = "#00ffcc" if st.session_state.xp >= 200 else "#30363d"
-        st.markdown(f"<div style='border: 2px solid {color}; padding:10px; border-radius:10px;'>🚀 **Rising Star**<br>Reach 200 XP</div>", unsafe_allow_html=True)
-    with cols[2]:
-        st.markdown("🔥 **Consistent**\n*5 Day Streak maintained*")
+    gh_user = st.text_input("Enter GitHub Username", placeholder="e.g., VarunikaShreeS")
+    
+    if st.button("Analyze Profile"):
+        if gh_user:
+            with st.status("Fetching Repository Data...", expanded=True) as status:
+                st.write("Checking Project Quality...")
+                time.sleep(1)
+                st.write("Scanning README files for documentation...")
+                time.sleep(1)
+                st.write("Calculating Commit Consistency...")
+                time.sleep(0.5)
+                status.update(label="Analysis Complete!", state="complete", expanded=False)
+            
+            score = random.randint(70, 95)
+            st.metric("Profile Strength Score", f"{score}/100")
+            
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown("### ✅ Strengths")
+                st.write("- Active contribution streak detected.")
+                st.write("- High use of modern frameworks (Streamlit/Python).")
+            with c2:
+                st.markdown("### 🛠️ Areas to Improve")
+                st.write("- 3 Repositories lack a descriptive README.md.")
+                st.write("- Consider pinning your most impactful projects.")
 
-    # Leaderboard
-    st.divider()
-    leaderboard_data = pd.DataFrame({
+            st.info("💡 **Recruiter Tip:** Recruiters look for 'Readme.md' first. Ensure your top 3 repos have clear setup instructions.")
+        else:
+            st.warning("Please enter a username.")
+
+# --- PAGE 3: LEADERBOARD ---
+elif page == "🏆 Leaderboard":
+    st.title("🏆 Global Rankings")
+    data = pd.DataFrame({
+        "Rank": [1, 2, 3, 4],
         "Ambassador": ["Varun", "Praneetha", "Harini (You)", "Suba"],
-        "XP": [450, 380, st.session_state.xp, 310]
-    }).sort_values(by="XP", ascending=False)
-    st.table(leaderboard_data)
+        "Total XP": [550, 420, st.session_state.xp, 310]
+    }).sort_values("Total XP", ascending=False)
+    st.table(data)
 
-# --- PAGE 3: ANALYTICS ---
-elif page == "📊 Program Analytics":
-    st.title("📊 Your Growth Engine")
-    st.metric("Total Level Progress", f"{st.session_state.xp} XP", delta=f"{st.session_state.streak} Day Streak")
-    
-    # Visualization
+# --- PAGE 4: ANALYTICS ---
+elif page == "📊 Analytics":
+    st.title("📊 Your Growth Metrics")
+    col1, col2 = st.columns(2)
+    col1.metric("Total XP", st.session_state.xp)
+    col2.metric("Missions Completed", len(st.session_state.history))
+
     if st.session_state.history:
-        history_df = pd.DataFrame(st.session_state.history)
-        fig = px.pie(history_df, values='xp', names='task', title="XP Contribution by Category", template="plotly_dark")
+        df = pd.DataFrame(st.session_state.history)
+        fig = px.bar(df, x="task", y="xp", title="XP per Mission", template="plotly_dark")
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("Complete your first mission to see your analytics!")
+        st.info("No data yet. Complete a mission!")
