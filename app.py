@@ -5,155 +5,147 @@ import plotly.graph_objects as go
 import time
 import random
 
-# 1. PAGE CONFIGURATION
+# 1. PAGE CONFIG
 st.set_page_config(page_title="CampusConnect Elite", page_icon="🛡️", layout="wide")
 
-# 2. ADVANCED UI STYLING
+# 2. PRO UI STYLING
 st.markdown("""
     <style>
-    .main { background-color: #0d1117; color: #c9d1d9; }
+    .main { background-color: #0d1117; }
     .stButton>button { 
         width: 100%; border-radius: 8px; background: linear-gradient(45deg, #238636, #2ea043); 
-        color: white; border: none; font-weight: 600; height: 3em; transition: 0.3s;
+        color: white; border: none; font-weight: bold; transition: 0.3s;
     }
-    .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(46, 160, 67, 0.4); }
-    .card { background: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-    .streak-box { background: rgba(255, 165, 0, 0.1); border: 1px solid orange; padding: 10px; border-radius: 8px; text-align: center; }
+    .stButton>button:hover { transform: scale(1.02); }
+    .sidebar-user { text-align: center; padding: 20px; border-bottom: 1px solid #30363d; }
+    .reward-card { 
+        background: #161b22; border: 1px solid #30363d; padding: 15px; 
+        border-radius: 12px; margin-bottom: 10px; border-left: 5px solid #2ea043;
+    }
+    .streak-fire { font-size: 30px; animation: burn 1.5s infinite alternate; }
+    @keyframes burn { from { opacity: 0.7; } to { opacity: 1; } }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. SESSION STATE (Initialization with Mock Data for Demo)
+# 3. SESSION STATE
 if 'auth' not in st.session_state: st.session_state.auth = False
-if 'xp' not in st.session_state: st.session_state.xp = 350
-if 'streak' not in st.session_state: st.session_state.streak = 7
-if 'history' not in st.session_state:
-    st.session_state.history = [
-        {"Task": "Onboarding", "XP": 100, "Date": "2024-03-01"},
-        {"Task": "LinkedIn Referral", "XP": 250, "Date": "2024-03-05"}
-    ]
+if 'xp' not in st.session_state: st.session_state.xp = 450
+if 'streak' not in st.session_state: st.session_state.streak = 5
+if 'history' not in st.session_state: 
+    st.session_state.history = [{"Task": "Initial Sign-up", "XP": 450, "Date": "2024-03-10"}]
 
 # --- LOGIN GATE ---
 if not st.session_state.auth:
-    c1, c2, c3 = st.columns([1, 1.5, 1])
-    with c2:
+    cols = st.columns([1, 1.5, 1])
+    with cols[1]:
         st.markdown("<h1 style='text-align: center;'>🛡️ CampusConnect</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center;'>The Single Source of Truth for CA Programs</p>", unsafe_allow_html=True)
-        with st.container():
-            user = st.text_input("Ambassador ID")
-            pw = st.text_input("Access Key", type="password")
-            if st.button("Secure Login"):
-                if user.lower() == "harini" and pw.lower() == "win":
-                    st.session_state.auth = True
-                    st.rerun()
-                else:
-                    st.error("Invalid ID or Key. (Try: harini / win)")
+        user = st.text_input("Ambassador ID")
+        pw = st.text_input("Password", type="password")
+        if st.button("Unlock Dashboard"):
+            if user.lower() == "harini" and pw.lower() == "win":
+                st.session_state.auth = True
+                st.rerun()
+            else:
+                st.error("Access Denied.")
     st.stop()
 
-# --- SIDEBAR NAVIGATION ---
+# --- SIDEBAR WITH AVATAR & MOTIVATION ---
 with st.sidebar:
-    st.title("CampusConnect")
-    st.markdown(f"### Welcome, Harini! 👋")
-    st.markdown(f"<div class='streak-box'>🔥 {st.session_state.streak} Day Streak</div>", unsafe_allow_html=True)
-    st.write(f"**Level {st.session_state.xp // 100} Ambassador**")
+    # Profile Avatar
+    st.markdown("""
+        <div class='sidebar-user'>
+            <img src='https://cdn-icons-png.flaticon.com/512/6840/6840478.png' width='100' style='border-radius:50%; border: 3px solid #2ea043;'>
+            <h3>Harini</h3>
+            <p style='color:#8b949e;'>Elite Ambassador</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
     st.divider()
-    page = st.radio("Menu", ["🎯 Task Marketplace", "🔍 GitHub Auditor", "🏆 Leaderboard", "📈 My Impact", "⚙️ Settings"])
+    
+    # Interesting Streak Maintainer
+    st.markdown(f"<div style='text-align:center;'><span class='streak-fire'>🔥</span><br><b>{st.session_state.streak} DAY STREAK</b></div>", unsafe_allow_html=True)
+    progress = (st.session_state.streak / 7) # Progress towards weekly bonus
+    st.progress(progress if progress <= 1.0 else 1.0)
+    st.caption(f"Next Weekly Reward in {7 - st.session_state.streak} days!")
+    
+    st.divider()
+    
+    page = st.radio("Explore", ["🎯 Task Marketplace", "🔍 GitHub Auditor", "🎁 Rewards Vault", "📊 Performance", "⚙️ Settings"])
+    
     if st.button("Sign Out"):
         st.session_state.auth = False
         st.rerun()
 
 # --- PAGE 1: TASK MARKETPLACE ---
 if page == "🎯 Task Marketplace":
-    st.title("🎯 Active Missions")
-    st.info("Complete missions, upload proof, and earn auto-scored XP.")
-    
+    st.title("🎯 Available Missions")
     tasks = [
-        {"name": "LinkedIn Brand Awareness", "xp": 150, "desc": "Post about the new AICore workshop with the official banner."},
-        {"name": "GitHub Project Star", "xp": 100, "desc": "Contribute a PR or Star the community repo."},
-        {"name": "Referral King/Queen", "xp": 300, "desc": "Onboard 3 students using your unique CA link."}
+        {"n": "LinkedIn Viral Post", "x": 200, "d": "Post a tech insight and tag @AICoreConnect."},
+        {"n": "Campus Workshop", "x": 500, "d": "Organize a mini-demo for 10+ students."}
     ]
-    
     for t in tasks:
         with st.container():
-            st.markdown(f"""<div class='card'>
-                <h4>{t['name']} <span style='color:#2ea043; float:right;'>+{t['xp']} XP</span></h4>
-                <p style='color:#8b949e;'>{t['desc']}</p>
-            </div>""", unsafe_allow_html=True)
-            with st.expander("Submit Proof of Work"):
-                link = st.text_input("Proof URL (LinkedIn/GitHub/Drive)", key=t['name'])
-                if st.button("Submit Mission", key=f"btn_{t['name']}"):
-                    if "http" in link:
-                        with st.status("AI Auditor Verifying..."):
-                            time.sleep(1.5)
-                        st.session_state.xp += t['xp']
-                        st.session_state.history.append({"Task": t['name'], "XP": t['xp'], "Date": "Today"})
+            st.markdown(f"<div class='reward-card'><b>{t['n']}</b><br><small>{t['d']}</small><br><span style='color:#2ea043;'>+{t['x']} XP</span></div>", unsafe_allow_html=True)
+            with st.expander("Submit Evidence"):
+                link = st.text_input("Proof Link", key=t['n'])
+                if st.button("Verify Mission", key=f"btn_{t['n']}"):
+                    if link:
+                        with st.spinner("AI Auditor Scanning..."): time.sleep(1.5)
+                        st.session_state.xp += t['x']
+                        st.session_state.history.append({"Task": t['n'], "XP": t['x'], "Date": "Today"})
                         st.balloons()
-                        st.success(f"Verified! {t['xp']} XP credited.")
-                    else:
-                        st.error("Please provide a valid URL link.")
+                        st.success("Mission Verified!")
 
-# --- PAGE 2: GITHUB AUDITOR (JUDGE FAVORITE) ---
+# --- PAGE 2: GITHUB AUDITOR ---
 elif page == "🔍 GitHub Auditor":
-    st.title("🔍 Recruiter-Ready Audit")
-    st.write("We assess your GitHub presence to see how recruiters view your profile.")
-    
-    gh_user = st.text_input("Enter GitHub Username", placeholder="e.g., HariniDev")
-    if st.button("Run Impact Audit"):
-        if gh_user:
-            with st.spinner("Analyzing Repo Depth & Commit Patterns..."):
-                time.sleep(2)
-            
-            score = random.randint(70, 95)
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number", value = score,
-                title = {'text': "Recruiter Readiness Score"},
-                gauge = {'axis': {'range': [0, 100]}, 'bar': {'color': "#2ea043"}}
-            ))
-            fig.update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
-            st.plotly_chart(fig, use_container_width=True)
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                st.success("**Strengths Identified:**\n- High commit consistency\n- Meaningful repo naming")
-            with col2:
-                st.warning("**Improvement Areas:**\n- Missing 'About' section in 2 repos\n- Profile README needs links")
-        else:
-            st.warning("Please enter a username.")
+    st.title("🔍 Career Readiness Audit")
+    u = st.text_input("GitHub Username")
+    if st.button("Audit Profile"):
+        score = random.randint(70, 95)
+        fig = go.Figure(go.Indicator(mode="gauge+number", value=score, title={'text': "Recruiter Score"}, gauge={'bar':{'color':"#2ea043"}}))
+        fig.update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
+        st.plotly_chart(fig)
 
-# --- PAGE 3: LEADERBOARD ---
-elif page == "🏆 Leaderboard":
-    st.title("🏆 Global Hall of Fame")
-    df_lb = pd.DataFrame({
-        "Ambassador": ["Varun", "Priya", "Harini (You)", "Subash", "Ananya"],
-        "XP": [850, 720, st.session_state.xp, 310, 290],
-        "Missions": [12, 10, len(st.session_state.history), 4, 3]
-    }).sort_values("XP", ascending=False)
+# --- PAGE 3: REWARDS VAULT (NEW!) ---
+elif page == "🎁 Rewards Vault":
+    st.title("🎁 Your Rewards & Perks")
+    st.write(f"Current Balance: **{st.session_state.xp} XP**")
     
-    st.table(df_lb)
-    st.markdown("### 🏅 Milestone Rewards")
-    st.write("- **Level 5:** AICore Connect T-Shirt 👕\n- **Level 10:** Internship Interview Fast-Track 🚀")
+    rewards = [
+        {"item": "Official AICore Connect T-Shirt", "cost": 1000, "locked": True},
+        {"item": "1-on-1 Mentorship Session", "cost": 2500, "locked": True},
+        {"item": "Internship Fast-Track Pass", "cost": 5000, "locked": True}
+    ]
+    
+    for r in rewards:
+        status = "🔒 Locked" if st.session_state.xp < r['cost'] else "🔓 Available!"
+        st.markdown(f"""
+            <div class='reward-card'>
+                <h4>{r['item']}</h4>
+                <p>Cost: {r['cost']} XP | <b>{status}</b></p>
+            </div>
+            """, unsafe_allow_html=True)
 
-# --- PAGE 4: ANALYTICS ---
-elif page == "📈 My Impact":
-    st.title("📈 Performance Analytics")
-    col1, col2 = st.columns(2)
-    
+# --- PAGE 4: PERFORMANCE (CRASH-FIXED) ---
+elif page == "📊 Performance":
+    st.title("📊 Your Impact Analytics")
+    c1, c2 = st.columns(2)
     df = pd.DataFrame(st.session_state.history)
-    with col1:
-        st.metric("Total XP", st.session_state.xp, delta="+15% from last week")
-        fig_pie = px.pie(df, values='XP', names='Task', title="XP Distribution by Source", template="plotly_dark")
-        st.plotly_chart(fig_pie, use_container_width=True)
     
-    with col2:
-        st.metric("Tasks Completed", len(df))
-        fig_bar = px.bar(df, x='Date', y='XP', title="XP Growth Timeline", template="plotly_dark")
-        st.plotly_chart(fig_bar, use_container_width=True)
+    with c1:
+        st.metric("Total XP Earned", st.session_state.xp)
+        if not df.empty:
+            fig_pie = px.pie(df, values='XP', names='Task', template="plotly_dark")
+            st.plotly_chart(fig_pie, use_container_width=True)
+    with c2:
+        st.metric("Weekly Rank", "#4")
+        st.info("💡 Keep your streak alive to jump to #3 next week!")
 
 # --- PAGE 5: SETTINGS ---
 elif page == "⚙️ Settings":
-    st.title("⚙️ Account Settings")
-    st.text_input("Display Name", value="Harini")
-    st.text_input("Linked College", value="Tech University")
-    st.toggle("Public Profile", value=True)
-    st.toggle("Email Notifications for New Tasks", value=True)
-    if st.button("Save Changes"):
-        st.toast("Profile Updated Successfully!")
+    st.title("⚙️ Account Preferences")
+    st.text_input("Full Name", value="Harini")
+    st.text_input("University", value="College of Engineering")
+    st.selectbox("Main Tech Stack", ["Python", "WebDev", "AI/ML", "DevOps"])
+    if st.button("Save Profile"):
+        st.toast("Profile Saved!")
