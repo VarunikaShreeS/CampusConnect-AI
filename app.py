@@ -5,147 +5,159 @@ import plotly.graph_objects as go
 import time
 import random
 
-# 1. PAGE CONFIG
-st.set_page_config(page_title="CampusConnect Elite", page_icon="🛡️", layout="wide")
+# 1. PAGE CONFIG & THEME
+st.set_page_config(page_title="CampusConnect AI", page_icon="🛡️", layout="wide")
 
-# 2. PRO UI STYLING
+# 2. ENHANCED CSS (Glassmorphism & Glow Effects)
 st.markdown("""
     <style>
-    .main { background-color: #0d1117; }
+    .main { background: #0d1117; color: #c9d1d9; }
     .stButton>button { 
-        width: 100%; border-radius: 8px; background: linear-gradient(45deg, #238636, #2ea043); 
-        color: white; border: none; font-weight: bold; transition: 0.3s;
+        width: 100%; border-radius: 12px; background: linear-gradient(90deg, #238636, #2ea043); 
+        color: white; border: none; font-weight: bold; height: 3em; transition: 0.3s;
     }
-    .stButton>button:hover { transform: scale(1.02); }
-    .sidebar-user { text-align: center; padding: 20px; border-bottom: 1px solid #30363d; }
-    .reward-card { 
-        background: #161b22; border: 1px solid #30363d; padding: 15px; 
-        border-radius: 12px; margin-bottom: 10px; border-left: 5px solid #2ea043;
-    }
-    .streak-fire { font-size: 30px; animation: burn 1.5s infinite alternate; }
-    @keyframes burn { from { opacity: 0.7; } to { opacity: 1; } }
+    .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(46, 160, 67, 0.4); }
+    .sidebar-card { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 15px; border: 1px solid #30363d; margin-bottom: 10px; }
+    .mission-card { background: #161b22; border-radius: 15px; padding: 20px; border-left: 5px solid #2ea043; margin-bottom: 15px; }
+    .ai-chat { background: #010409; border-radius: 10px; padding: 10px; border: 1px solid #30363d; font-size: 0.9em; }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. SESSION STATE
+# 3. DYNAMIC SESSION STATE
 if 'auth' not in st.session_state: st.session_state.auth = False
-if 'xp' not in st.session_state: st.session_state.xp = 450
+if 'xp' not in st.session_state: st.session_state.xp = 550
 if 'streak' not in st.session_state: st.session_state.streak = 5
 if 'history' not in st.session_state: 
-    st.session_state.history = [{"Task": "Initial Sign-up", "XP": 450, "Date": "2024-03-10"}]
+    st.session_state.history = [{"Task": "Sign-up Bonus", "XP": 550, "Date": "2024-03-20"}]
 
 # --- LOGIN GATE ---
 if not st.session_state.auth:
-    cols = st.columns([1, 1.5, 1])
+    cols = st.columns([1, 1.2, 1])
     with cols[1]:
-        st.markdown("<h1 style='text-align: center;'>🛡️ CampusConnect</h1>", unsafe_allow_html=True)
+        st.markdown("<h1 style='text-align: center;'>🛡️ CampusConnect AI</h1>", unsafe_allow_html=True)
         user = st.text_input("Ambassador ID")
         pw = st.text_input("Password", type="password")
-        if st.button("Unlock Dashboard"):
+        if st.button("Access Command Center"):
             if user.lower() == "harini" and pw.lower() == "win":
                 st.session_state.auth = True
                 st.rerun()
-            else:
-                st.error("Access Denied.")
+            else: st.error("Access Denied.")
     st.stop()
 
-# --- SIDEBAR WITH AVATAR & MOTIVATION ---
+# --- SIDEBAR: GAMIFIED HUB ---
 with st.sidebar:
-    # Profile Avatar
-    st.markdown("""
-        <div class='sidebar-user'>
-            <img src='https://cdn-icons-png.flaticon.com/512/6840/6840478.png' width='100' style='border-radius:50%; border: 3px solid #2ea043;'>
+    # Profile & Leveling
+    level = st.session_state.xp // 500
+    progress = (st.session_state.xp % 500) / 500
+    st.markdown(f"""
+        <div style='text-align: center;'>
+            <img src='https://cdn-icons-png.flaticon.com/512/6840/6840478.png' width='80' style='border-radius:50%; border: 2px solid #2ea043;'>
             <h3>Harini</h3>
-            <p style='color:#8b949e;'>Elite Ambassador</p>
+            <p style='color:#2ea043; font-weight:bold;'>LVL {level} ELITE</p>
         </div>
-        """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+    st.progress(progress)
+    st.caption(f"✨ {500 - (st.session_state.xp % 500)} XP to reach Level {level + 1}")
     
-    st.divider()
-    
-    # Interesting Streak Maintainer
-    st.markdown(f"<div style='text-align:center;'><span class='streak-fire'>🔥</span><br><b>{st.session_state.streak} DAY STREAK</b></div>", unsafe_allow_html=True)
-    progress = (st.session_state.streak / 7) # Progress towards weekly bonus
-    st.progress(progress if progress <= 1.0 else 1.0)
-    st.caption(f"Next Weekly Reward in {7 - st.session_state.streak} days!")
-    
-    st.divider()
-    
-    page = st.radio("Explore", ["🎯 Task Marketplace", "🔍 GitHub Auditor", "🎁 Rewards Vault", "📊 Performance", "⚙️ Settings"])
-    
-    if st.button("Sign Out"):
-        st.session_state.auth = False
-        st.rerun()
+    # Streak Shield
+    st.markdown(f"""
+        <div class='sidebar-card' style='text-align:center;'>
+            <h2 style='margin:0;'>🔥 {st.session_state.streak}</h2>
+            <small>Day Streak</small>
+        </div>
+    """, unsafe_allow_html=True)
 
-# --- PAGE 1: TASK MARKETPLACE ---
-if page == "🎯 Task Marketplace":
-    st.title("🎯 Available Missions")
-    tasks = [
-        {"n": "LinkedIn Viral Post", "x": 200, "d": "Post a tech insight and tag @AICoreConnect."},
-        {"n": "Campus Workshop", "x": 500, "d": "Organize a mini-demo for 10+ students."}
+    st.divider()
+    page = st.radio("Navigation", ["🎯 Missions", "🔍 GitHub Audit", "🤖 AI CampusBot", "🎁 Vault", "📊 Stats"])
+    
+    # AI CampusBot Sidebar Hook
+    st.divider()
+    st.markdown("**🤖 AI Status:** Online")
+    st.caption("AI is monitoring your progress...")
+
+# --- PAGE 1: MISSIONS (GAMIFIED) ---
+if page == "🎯 Missions":
+    st.title("🎯 Mission Marketplace")
+    st.info("Complete missions to fuel your Level Up!")
+    
+    missions = [
+        {"id": "m1", "title": "Social Media Blast", "xp": 150, "icon": "📱"},
+        {"id": "m2", "title": "Referral Surge", "xp": 400, "icon": "🚀"},
+        {"id": "m3", "title": "Tech Blog Writing", "xp": 250, "icon": "✍️"}
     ]
-    for t in tasks:
+
+    for m in missions:
         with st.container():
-            st.markdown(f"<div class='reward-card'><b>{t['n']}</b><br><small>{t['d']}</small><br><span style='color:#2ea043;'>+{t['x']} XP</span></div>", unsafe_allow_html=True)
-            with st.expander("Submit Evidence"):
-                link = st.text_input("Proof Link", key=t['n'])
-                if st.button("Verify Mission", key=f"btn_{t['n']}"):
+            st.markdown(f"""<div class='mission-card'>
+                <h3>{m['icon']} {m['title']} <span style='float:right; color:#2ea043;'>+{m['xp']} XP</span></h3>
+                <p>Submit proof to unlock rewards and boost your rank.</p>
+            </div>""", unsafe_allow_html=True)
+            with st.expander("Submit Proof"):
+                link = st.text_input("Submission URL", key=m['id'])
+                if st.button("Claim Reward", key=f"btn_{m['id']}"):
                     if link:
-                        with st.spinner("AI Auditor Scanning..."): time.sleep(1.5)
-                        st.session_state.xp += t['x']
-                        st.session_state.history.append({"Task": t['n'], "XP": t['x'], "Date": "Today"})
+                        with st.status("AI Verifying Content..."):
+                            time.sleep(1.2)
+                            st.session_state.xp += m['xp']
+                            st.session_state.history.append({"Task": m['title'], "XP": m['xp'], "Date": "Today"})
                         st.balloons()
-                        st.success("Mission Verified!")
+                        st.toast("XP Credited!")
+                        st.rerun()
 
-# --- PAGE 2: GITHUB AUDITOR ---
-elif page == "🔍 GitHub Auditor":
-    st.title("🔍 Career Readiness Audit")
-    u = st.text_input("GitHub Username")
-    if st.button("Audit Profile"):
-        score = random.randint(70, 95)
-        fig = go.Figure(go.Indicator(mode="gauge+number", value=score, title={'text': "Recruiter Score"}, gauge={'bar':{'color':"#2ea043"}}))
-        fig.update_layout(height=300, paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
-        st.plotly_chart(fig)
+# --- PAGE 2: GITHUB AUDIT ---
+elif page == "🔍 GitHub Audit":
+    st.title("🔍 Recruiter AI Audit")
+    gh = st.text_input("Username", placeholder="e.g. VarunikaShreeS")
+    if st.button("Start AI Analysis"):
+        score = random.randint(75, 98)
+        fig = go.Figure(go.Indicator(mode="gauge+number", value=score, 
+            title={'text': "Recruiter Grade"},
+            gauge={'bar':{'color':"#2ea043"}, 'steps':[{'range':[0,70],'color':'#3e1b1b'},{'range':[70,100],'color':'#1b3e1b'}]}))
+        fig.update_layout(height=350, paper_bgcolor='rgba(0,0,0,0)', font={'color': "white"})
+        st.plotly_chart(fig, use_container_width=True)
+        st.success("AI Recommendation: Profile pinned repos to hit 90+ Score!")
 
-# --- PAGE 3: REWARDS VAULT (NEW!) ---
-elif page == "🎁 Rewards Vault":
-    st.title("🎁 Your Rewards & Perks")
-    st.write(f"Current Balance: **{st.session_state.xp} XP**")
+# --- PAGE 3: AI CAMPUSBOT (THE "WOW" FACTOR) ---
+elif page == "🤖 AI CampusBot":
+    st.title("🤖 CampusBot AI")
+    st.write("Your personal AI mentor for the Ambassador program.")
     
+    prompt = st.chat_input("Ask about rewards, levels, or how to earn XP...")
+    if prompt:
+        with st.chat_message("user"): st.write(prompt)
+        with st.chat_message("assistant"):
+            if "xp" in prompt.lower():
+                st.write(f"Hello Harini! You currently have **{st.session_state.xp} XP**. I suggest the 'Referral Surge' mission to hit Level {level + 1} faster!")
+            elif "reward" in prompt.lower():
+                st.write("You are close to unlocking the **Official T-Shirt**! Keep your streak going.")
+            else:
+                st.write("I'm analyzing your profile... You're doing great! Your consistency is in the top 5%.")
+
+# --- PAGE 4: REWARDS VAULT ---
+elif page == "🎁 Vault":
+    st.title("🎁 Rewards Vault")
     rewards = [
-        {"item": "Official AICore Connect T-Shirt", "cost": 1000, "locked": True},
-        {"item": "1-on-1 Mentorship Session", "cost": 2500, "locked": True},
-        {"item": "Internship Fast-Track Pass", "cost": 5000, "locked": True}
+        {"item": "AICore T-Shirt", "xp": 1000},
+        {"item": "Expert Mentorship", "xp": 2500},
+        {"item": "Internship Pass", "xp": 5000}
     ]
-    
     for r in rewards:
-        status = "🔒 Locked" if st.session_state.xp < r['cost'] else "🔓 Available!"
+        locked = st.session_state.xp < r['xp']
         st.markdown(f"""
-            <div class='reward-card'>
-                <h4>{r['item']}</h4>
-                <p>Cost: {r['cost']} XP | <b>{status}</b></p>
+            <div class='mission-card' style='opacity: {0.5 if locked else 1};'>
+                <h4>{'🔒' if locked else '🎁'} {r['item']}</h4>
+                <p>Unlock at {r['xp']} XP</p>
             </div>
-            """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-# --- PAGE 4: PERFORMANCE (CRASH-FIXED) ---
-elif page == "📊 Performance":
-    st.title("📊 Your Impact Analytics")
-    c1, c2 = st.columns(2)
+# --- PAGE 5: STATS ---
+elif page == "📊 Stats":
+    st.title("📊 Impact Analytics")
     df = pd.DataFrame(st.session_state.history)
-    
-    with c1:
-        st.metric("Total XP Earned", st.session_state.xp)
-        if not df.empty:
-            fig_pie = px.pie(df, values='XP', names='Task', template="plotly_dark")
-            st.plotly_chart(fig_pie, use_container_width=True)
-    with c2:
-        st.metric("Weekly Rank", "#4")
-        st.info("💡 Keep your streak alive to jump to #3 next week!")
-
-# --- PAGE 5: SETTINGS ---
-elif page == "⚙️ Settings":
-    st.title("⚙️ Account Preferences")
-    st.text_input("Full Name", value="Harini")
-    st.text_input("University", value="College of Engineering")
-    st.selectbox("Main Tech Stack", ["Python", "WebDev", "AI/ML", "DevOps"])
-    if st.button("Save Profile"):
-        st.toast("Profile Saved!")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Total XP", st.session_state.xp, delta=f"+{st.session_state.history[-1]['XP']}")
+        st.plotly_chart(px.pie(df, values='XP', names='Task', template="plotly_dark"), use_container_width=True)
+    with col2:
+        st.metric("Daily Streak", f"{st.session_state.streak} Days")
+        st.plotly_chart(px.bar(df, x='Date', y='XP', template="plotly_dark"), use_container_width=True)
