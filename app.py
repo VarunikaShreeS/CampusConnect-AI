@@ -3,99 +3,108 @@ import pandas as pd
 import requests
 
 # 1. PAGE CONFIGURATION
-st.set_page_config(
-    page_title="CampusConnect AI", 
-    page_icon="🚀", 
-    layout="wide"
-)
+st.set_page_config(page_title="CampusConnect AI Pro", page_icon="💎", layout="wide")
+
+# Custom CSS to make it look "Premium"
+st.markdown("""
+    <style>
+    .main { background-color: #0e1117; }
+    .stMetric { background-color: #1e2130; padding: 15px; border-radius: 10px; border: 1px solid #3e4259; }
+    </style>
+    """, unsafe_allow_html=True)
 
 # 2. BRANDING & SIDEBAR
-st.sidebar.markdown("# 📍 CampusConnect")
-st.sidebar.markdown("---")
+st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3061/3061341.png", width=80)
+st.sidebar.title("📍 CampusConnect AI")
+st.sidebar.markdown("*First-Year Innovation Hack*")
+st.sidebar.divider()
 page = st.sidebar.radio("Navigation Menu", ["Dashboard", "Leaderboard", "GitHub Recruiter Review"])
 
-# Initialize session state for gamification points
-# I updated these with the names you provided!
+# Initialize session state for gamification
 if 'points' not in st.session_state:
-    st.session_state.points = {
-        "Harini (You)": 50, 
-        "Varun": 450, 
-        "Praneetha": 380, 
-        "Suba": 310
-    }
+    st.session_state.points = {"Harini (You)": 50, "Varun": 450, "Praneetha": 380, "Suba": 310}
+if 'last_submission' not in st.session_state:
+    st.session_state.last_submission = None
 
-# --- PAGE 1: DASHBOARD (Meets: Automated Task Workflows) ---
+# --- PAGE 1: DASHBOARD ---
 if page == "Dashboard":
     st.title("🙌 Ambassador Dashboard")
-    st.markdown("### *Assign, track, and verify tasks with AI auto-scoring.* [cite: 20]")
     
-    with st.container():
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
         st.subheader("Submit Task Proof")
-        task_type = st.selectbox(
-            "What task did you complete?", 
-            ["LinkedIn Brand Post", "WhatsApp Referral", "Content Creation", "Event Hosting"]
-        )
+        task_type = st.selectbox("What task did you complete?", ["LinkedIn Brand Post", "WhatsApp Referral", "Content Creation", "Event Hosting"])
         proof_url = st.text_input("Paste URL (Social Media Post or Google Drive Link)")
         
-        if st.button("Submit & Claim Points"):
+        if st.button("Submit & Claim Points", use_container_width=True):
             if proof_url:
-                st.success(f"Proof received for {task_type}! AI is now verifying...")
                 st.balloons()
                 st.session_state.points["Harini (You)"] += 50
-                st.info("Verified! +50 XP added to your profile. Check the Leaderboard! [cite: 21]")
+                st.session_state.last_submission = task_type
+                st.success(f"Verified! +50 XP added for {task_type}.")
             else:
-                st.error("Please provide a link as proof of work.")
+                st.error("Please provide a link as proof.")
 
-# --- PAGE 2: LEADERBOARD (Meets: Identify Top Performers & Gamification) ---
+    with col2:
+        st.subheader("Your Progress")
+        current_pts = st.session_state.points["Harini (You)"]
+        st.metric("Your Total XP", f"{current_pts} XP", delta="50 XP (Today)")
+        
+        # Rank Logic
+        progress = current_pts / 500  # Target 500
+        st.write(f"Progress to 'Gold Level'")
+        st.progress(progress if progress <= 1.0 else 1.0)
+        st.caption("Earn 500 XP to unlock the exclusive Mentorship Badge!")
+
+# --- PAGE 2: LEADERBOARD ---
 elif page == "Leaderboard":
     st.title("🏆 Campus Leaderboard")
-    st.markdown("### *Surface high-impact ambassadors through real-time data.* [cite: 19]")
     
-    # Convert points dictionary to a list for sorting
-    data_list = []
-    for name, score in st.session_state.points.items():
-        data_list.append({"Ambassador": name, "XP Points": score})
-    
-    # Create the DataFrame (Table)
-    df = pd.DataFrame(data_list)
-    df = df.sort_values(by="XP Points", ascending=False).reset_index(drop=True)
-    
-    # Add rank icons
+    # Process Data
+    data_list = [{"Ambassador": k, "XP Points": v} for k, v in st.session_state.points.items()]
+    df = pd.DataFrame(data_list).sort_values(by="XP Points", ascending=False).reset_index(drop=True)
     df.index = df.index + 1
     
-    st.table(df)
-    st.success("Top 3 performers this month get exclusive Mentorship Badges! 🏅 [cite: 21]")
+    # Visual Highlights
+    st.write("### 🔥 Top Performers")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("1st Place", df.iloc[0]['Ambassador'], f"{df.iloc[0]['XP Points']} XP")
+    if len(df) > 1: col2.metric("2nd Place", df.iloc[1]['Ambassador'], f"{df.iloc[1]['XP Points']} XP")
+    if len(df) > 2: col3.metric("3rd Place", df.iloc[2]['Ambassador'], f"{df.iloc[2]['XP Points']} XP")
+    
+    st.divider()
+    st.dataframe(df, use_container_width=True)
 
-# --- PAGE 3: GITHUB REVIEW (Meets: Impact Criteria & Success Look) ---
+# --- PAGE 3: GITHUB REVIEW ---
 elif page == "GitHub Recruiter Review":
-    st.title("🔍 GitHub Recruiter-Ready Analysis")
-    st.markdown("### *Assessing GitHub profiles in under 2 minutes.* [cite: 28]")
+    st.title("🔍 Recruiter-Ready Analysis")
+    username = st.text_input("Enter GitHub Username")
     
-    username = st.text_input("Enter your GitHub username to see what recruiters notice first [cite: 37]")
-    
-    if st.button("Start AI Analysis"):
+    if st.button("Start Analysis"):
         if username:
-            with st.spinner("Analyzing repositories and commit history..."):
-                # Fetching real data from GitHub API
-                response = requests.get(f"https://api.github.com/users/{username}")
-                
-                if response.status_code == 200:
-                    user_data = response.json()
+            with st.spinner("AI analyzing profile metrics..."):
+                res = requests.get(f"https://api.github.com/users/{username}")
+                if res.status_code == 200:
+                    data = res.json()
                     
-                    st.write(f"## Analysis for {user_data.get('name', username)}")
+                    # AI Scoring Logic
+                    repos = data['public_repos']
+                    followers = data['followers']
+                    score = min(10, (repos * 0.5) + (followers * 0.1))
                     
-                    # Creating columns for metrics
-                    col1, col2, col3 = st.columns(3)
-                    col1.metric("Public Projects", user_data['public_repos'])
-                    col2.metric("Followers", user_data['followers'])
-                    col3.metric("Account Age", f"{2026 - int(user_data['created_at'][:4])} Years")
+                    col1, col2 = st.columns([1, 2])
+                    with col1:
+                        st.image(data['avatar_url'], width=200)
+                        st.metric("AI Recruiter Score", f"{score:.1f}/10")
                     
-                    st.divider()
-                    
-                    # Specific Advice based on Success Criteria
-                    st.subheader("💡 How to become Recruiter-Ready [cite: 40]")
-                    st.markdown("- **What they notice first:** Your profile bio and 'Pinned' repos. Ensure these reflect your current skills. [cite: 37]")
-                    st.markdown("- **Repos to Improve:** Any repository without a README.md file should be improved or archived. [cite: 39]")
-                    st.markdown("- **Next Steps:** Organize your projects into a structured portfolio to make them more impressive. [cite: 39]")
+                    with col2:
+                        st.write(f"## {data.get('name', username)}")
+                        st.write(f"**Bio:** {data['bio'] if data['bio'] else 'No bio provided'}")
+                        st.info(f"💡 **AI Tip:** Your account is {2026 - int(data['created_at'][:4])} years old. {'Great consistency!' if repos > 10 else 'Try to upload more projects to increase your score.'}")
+                        
+                        st.subheader("Action Plan:")
+                        st.markdown(f"- [ ] Update README for your top 3 repos.")
+                        st.markdown(f"- [ ] Pin repositories that use modern tech stacks.")
                 else:
-                    st.error("GitHub user not found. Please check the spelling.")
+                    st.error("User not found.")
