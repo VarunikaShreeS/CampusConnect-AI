@@ -4,10 +4,8 @@ import plotly.express as px
 import requests
 import random
 import json
-import time
 import qrcode
 from datetime import datetime
-from PIL import Image
 
 # ==============================
 # CONFIG
@@ -15,35 +13,9 @@ from PIL import Image
 st.set_page_config(layout="wide", page_title="CampusConnect AI", page_icon="🚀")
 
 GITHUB_API = "https://api.github.com"
-GITHUB_TOKEN = ""  # 🔑 ADD YOUR TOKEN HERE (optional but recommended)
-
-HEADERS = {
-    "Accept": "application/vnd.github+json",
-}
-if GITHUB_TOKEN:
-    HEADERS["Authorization"] = f"Bearer {GITHUB_TOKEN}"
 
 # ==============================
-# DATA STORAGE
-# ==============================
-DATA_FILE = "data.json"
-
-def load_data():
-    try:
-        with open(DATA_FILE, "r") as f:
-            data = json.load(f)
-            for k, v in data.items():
-                st.session_state[k] = v
-    except:
-        pass
-
-def save_data():
-    data = dict(st.session_state)
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, default=str)
-
-# ==============================
-# INIT STATE
+# SESSION INIT (NO FILE STORAGE)
 # ==============================
 def init():
     defaults = {
@@ -62,7 +34,6 @@ def init():
         if k not in st.session_state:
             st.session_state[k] = v
 
-load_data()
 init()
 
 # ==============================
@@ -70,14 +41,14 @@ init()
 # ==============================
 def analyze_github(username):
     try:
-        u = requests.get(f"{GITHUB_API}/users/{username}", headers=HEADERS)
+        u = requests.get(f"{GITHUB_API}/users/{username}")
         if u.status_code != 200:
             return None, 0
         user = u.json()
 
-        repos = requests.get(f"{GITHUB_API}/users/{username}/repos", headers=HEADERS).json()
+        repos = requests.get(f"{GITHUB_API}/users/{username}/repos").json()
 
-        stars = sum(r["stargazers_count"] for r in repos if isinstance(r, dict))
+        stars = sum(r.get("stargazers_count", 0) for r in repos if isinstance(r, dict))
         score = min(user["public_repos"] * 5 + user["followers"] * 3 + stars * 4, 1000)
 
         return user, score
@@ -85,7 +56,7 @@ def analyze_github(username):
         return None, 0
 
 # ==============================
-# STREAK LOGIC
+# STREAK
 # ==============================
 def update_streak():
     today = datetime.now().date()
@@ -95,13 +66,12 @@ def update_streak():
         last = datetime.fromisoformat(last).date()
         if (today - last).days == 1:
             st.session_state.streak += 1
-        elif (today - last).days > 1:
+        else:
             st.session_state.streak = 1
     else:
         st.session_state.streak = 1
 
     st.session_state.last_task_date = str(datetime.now())
-    save_data()
 
 # ==============================
 # LOGIN
@@ -122,19 +92,24 @@ if not st.session_state.logged_in:
             st.session_state.xp = score // 5
             st.session_state.ambassador_name = name or profile["login"]
 
-            # referral code
             st.session_state.ref_code = f"CC-{profile['login'][:4].upper()}-{random.randint(1000,9999)}"
 
-            # leaderboard
-            st.session_state.leaderboard.append({
-                "name": st.session_state.ambassador_name,
-                "xp": st.session_state.xp
-            })
+            # FIX: safe leaderboard add/update
+            found = False
+            for user in st.session_state.leaderboard:
+                if user["name"] == st.session_state.ambassador_name:
+                    user["xp"] = st.session_state.xp
+                    found = True
 
-            save_data()
+            if not found:
+                st.session_state.leaderboard.append({
+                    "name": st.session_state.ambassador_name,
+                    "xp": st.session_state.xp
+                })
+
             st.rerun()
         else:
-            st.error("Invalid GitHub")
+            st.error("Invalid GitHub username")
 
     st.stop()
 
@@ -173,17 +148,16 @@ for t in TASKS:
 
                 update_streak()
 
-                # update leaderboard
+                # FIX leaderboard safely
                 for user in st.session_state.leaderboard:
                     if user["name"] == st.session_state.ambassador_name:
                         user["xp"] = st.session_state.xp
 
-                save_data()
                 st.success(f"+{t['xp']} XP")
                 st.rerun()
 
 # ==============================
-# PROOF UPLOAD
+# FILE UPLOAD
 # ==============================
 st.subheader("📂 Upload Proof")
 file = st.file_uploader("Upload screenshot", type=["png","jpg","pdf"])
@@ -191,14 +165,13 @@ if file:
     st.success("Proof uploaded!")
 
 # ==============================
-# REFERRAL SYSTEM
+# REFERRAL
 # ==============================
 st.subheader("🔗 Referral")
 
 ref_link = f"https://campusconnect.ai/join?ref={st.session_state.ref_code}"
 st.code(ref_link)
 
-# QR Code
 qr = qrcode.make(ref_link)
 st.image(qr)
 
@@ -217,13 +190,13 @@ for i, user in enumerate(lb, 1):
 # ==============================
 st.subheader("📊 Analytics")
 
-df = pd.DataFrame(lb)
-if not df.empty:
-    fig = px.bar(df, x="name", y="xp")
+if lb:
+    df = pd.DataFrame(lb)
+    fig = px.bar(df, x="name", y="xp", title="Leaderboard")
     st.plotly_chart(fig, use_container_width=True)
 
 # ==============================
-# AI (SIMPLE MOCK)
+# AI MOCK
 # ==============================
 st.subheader("🤖 AI Suggestion")
 
