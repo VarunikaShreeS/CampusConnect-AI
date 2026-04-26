@@ -1,105 +1,118 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-import requests
+import time
 
-# 1. PAGE CONFIG
-st.set_page_config(page_title="CampusConnect Elite", page_icon="💎", layout="wide")
+# 1. PAGE SETUP
+st.set_page_config(page_title="CampusConnect Elite", page_icon="🛡️", layout="wide")
 
-# 2. PRO UI STYLING
+# Custom CSS for Glassmorphism & Pro UI
 st.markdown("""
     <style>
-    .main { background-color: #0b0e14; color: #e0e0e0; }
-    [data-testid="stSidebar"] { background-color: #11141c; border-right: 2px solid #00ffcc; }
-    .stMetric { background: rgba(0, 255, 204, 0.05); border: 1px solid #00ffcc; border-radius: 15px; }
-    .achievement-card {
-        padding: 20px; border-radius: 15px; background: linear-gradient(135deg, #1e222d 0%, #11141c 100%);
-        border: 1px solid #30363d; margin-bottom: 10px;
-    }
+    .main { background-color: #0e1117; }
+    .stButton>button { width: 100%; border-radius: 20px; background: linear-gradient(45deg, #00ffcc, #0099ff); color: black; border: none; font-weight: bold; }
+    .task-card { background: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 15px; margin-bottom: 15px; }
+    .streak-fire { font-size: 24px; color: #ff4b4b; }
     </style>
     """, unsafe_allow_html=True)
 
-# Data Initialization
-if 'points' not in st.session_state:
-    st.session_state.points = {"Varun": 450, "Praneetha": 380, "Suba": 310, "Harini (You)": 210}
+# 2. SESSION STATE MANAGEMENT (Login & Data)
+if 'logged_in' not in st.session_state: st.session_state.logged_in = False
+if 'xp' not in st.session_state: st.session_state.xp = 150
+if 'streak' not in st.session_state: st.session_state.streak = 5
+if 'history' not in st.session_state: st.session_state.history = []
 
-# --- SIDEBAR: GAMIFIED HUB ---
+# --- LOGIN PAGE ---
+if not st.session_state.logged_in:
+    cols = st.columns([1, 2, 1])
+    with cols[1]:
+        st.image("https://cdn-icons-png.flaticon.com/512/3061/3061341.png", width=100)
+        st.title("CampusConnect Login")
+        user = st.text_input("Ambassador ID")
+        pw = st.text_input("Password", type="password")
+        if st.button("Access Dashboard"):
+            if user == "HARINI" and pw == "WIN":
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error("Invalid Credentials. (Hint: HARINI / WIN)")
+    st.stop()
+
+# --- MAIN APP (AFTER LOGIN) ---
 with st.sidebar:
-    st.markdown("<h2 style='color: #00ffcc;'>💎 CampusConnect</h2>", unsafe_allow_html=True)
-    
-    # Profile Hub
-    col_a, col_b = st.columns([1, 2])
-    with col_a: st.image("https://api.dicebear.com/7.x/avataaars/svg?seed=Harini", width=70)
-    with col_b:
-        st.markdown("**Harini**")
-        st.markdown("<p style='color: #00ffcc; font-size: 12px;'>🏆 GOLD AMBASSADOR</p>", unsafe_allow_html=True)
-    
-    # Leveling System
-    xp = st.session_state.points["Harini (You)"]
-    st.write(f"**Level 4** | {xp}/500 XP")
-    st.progress(xp/500)
-    
+    st.markdown(f"## Welcome, Harini! 👋")
+    st.markdown(f"<p class='streak-fire'>🔥 {st.session_state.streak} Day Streak</p>", unsafe_allow_html=True)
     st.divider()
-    menu = st.radio("OPERATIONS", ["🚀 Mission Control", "📊 Impact Analytics", "🔍 AI Talent Audit"])
-    st.divider()
-    st.success("🔥 7 Day Streak!")
+    page = st.radio("Navigation", ["🎯 Task Marketplace", "🏆 Hall of Fame", "📊 Program Analytics"])
+    if st.button("Logout"):
+        st.session_state.logged_in = False
+        st.rerun()
 
-# --- PAGE 1: MISSION CONTROL (Innovation: Smart Tasks) ---
-if menu == "🚀 Mission Control":
-    st.title("🚀 Mission Control")
-    
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        st.markdown("### Active Challenges")
+# --- PAGE 1: TASK MARKETPLACE (Structured Assignment & Verification) ---
+if page == "🎯 Task Marketplace":
+    st.title("🎯 Available Missions")
+    st.caption("Complete missions, submit proof, and pass the AI verification audit.")
+
+    # Task Data
+    tasks = [
+        {"id": 1, "title": "LinkedIn Brand Awareness", "reward": 50, "desc": "Post a summary of today's tech workshop."},
+        {"id": 2, "title": "Referral Drive", "reward": 100, "desc": "Onboard 5 new students to the community."},
+        {"id": 3, "title": "Tech Content Creation", "reward": 75, "desc": "Write a medium article on 'Future of AI'."}
+    ]
+
+    for t in tasks:
         with st.container():
-            st.markdown("""
-            <div class='achievement-card'>
-                <h4>📣 Social Media Blitz</h4>
-                <p>Post about the hackathon on LinkedIn. <b>Reward: 50 XP</b></p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"""<div class='task-card'>
+                <h3>{t['title']} <span style='color:#00ffcc;'>+{t['reward']} XP</span></h3>
+                <p>{t['desc']}</p>
+            </div>""", unsafe_allow_html=True)
             
-            proof = st.text_input("Enter Proof Link")
-            if st.button("Submit Mission", use_container_width=True):
-                if proof:
-                    st.session_state.points["Harini (You)"] += 50
-                    st.balloons()
-                    st.toast("Mission Accomplished! +50 XP")
-                    st.rerun()
-    
-    with col2:
-        st.markdown("### Achievements")
-        st.write("✅ First Referral")
-        st.write("✅ 5 Day Streak")
-        st.write("🔒 Mentor Status (450 XP)")
+            with st.expander(f"Submit Proof for {t['title']}"):
+                link = st.text_input("Verification URL (LinkedIn/Drive/GitHub)", key=f"link_{t['id']}")
+                if st.button("Submit Mission", key=f"btn_{t['id']}"):
+                    # TRUTH VERIFICATION LOGIC
+                    if "http" in link and (len(link) > 15): 
+                        with st.spinner("AI Auditor verifying proof..."):
+                            time.sleep(2) # Simulate verification
+                        st.session_state.xp += t['reward']
+                        st.session_state.history.append({"task": t['title'], "xp": t['reward']})
+                        st.balloons()
+                        st.success(f"Verified! {t['reward']} XP added to your profile.")
+                    else:
+                        st.error("Submission Failed: The link provided does not look like a valid proof URL. Please check and try again.")
 
-# --- PAGE 2: IMPACT ANALYTICS (Innovation: Skill Radar) ---
-elif menu == "📊 Impact Analytics":
-    st.title("📊 Impact Analytics")
+# --- PAGE 2: HALL OF FAME (Gamification) ---
+elif page == "🏆 Hall of Fame":
+    st.title("🏆 Hall of Fame")
     
-    df = pd.DataFrame(list(st.session_state.points.items()), columns=['Ambassador', 'XP']).sort_values('XP', ascending=False)
+    # Milestone Awards
+    st.subheader("Your Achievements")
+    cols = st.columns(3)
+    with cols[0]:
+        st.markdown("🏅 **Early Bird**\n*First mission complete*")
+    with cols[1]:
+        color = "#00ffcc" if st.session_state.xp >= 200 else "#30363d"
+        st.markdown(f"<div style='border: 2px solid {color}; padding:10px; border-radius:10px;'>🚀 **Rising Star**<br>Reach 200 XP</div>", unsafe_allow_html=True)
+    with cols[2]:
+        st.markdown("🔥 **Consistent**\n*5 Day Streak maintained*")
+
+    # Leaderboard
+    st.divider()
+    leaderboard_data = pd.DataFrame({
+        "Ambassador": ["Varun", "Praneetha", "Harini (You)", "Suba"],
+        "XP": [450, 380, st.session_state.xp, 310]
+    }).sort_values(by="XP", ascending=False)
+    st.table(leaderboard_data)
+
+# --- PAGE 3: ANALYTICS ---
+elif page == "📊 Program Analytics":
+    st.title("📊 Your Growth Engine")
+    st.metric("Total Level Progress", f"{st.session_state.xp} XP", delta=f"{st.session_state.streak} Day Streak")
     
-    c1, c2 = st.columns(2)
-    with c1:
-        fig = px.bar(df, x='Ambassador', y='XP', color='XP', template="plotly_dark", title="Global Rankings")
+    # Visualization
+    if st.session_state.history:
+        history_df = pd.DataFrame(st.session_state.history)
+        fig = px.pie(history_df, values='xp', names='task', title="XP Contribution by Category", template="plotly_dark")
         st.plotly_chart(fig, use_container_width=True)
-    
-    with c2:
-        # INNOVATION: Radar Chart for Skills
-        categories = ['Marketing','Technical','Referrals','Content','Events']
-        fig_radar = go.Figure()
-        fig_radar.add_trace(go.Scatterpolar(r=[4, 5, 2, 4, 3], theta=categories, fill='toself', name='Your Skills'))
-        fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), showlegend=False, template="plotly_dark", title="Ambassador Skill Radar")
-        st.plotly_chart(fig_radar, use_container_width=True)
-
-# --- PAGE 3: AI TALENT AUDIT ---
-elif menu == "🔍 AI Talent Audit":
-    st.title("🔍 AI Talent Audit")
-    username = st.text_input("GitHub Username")
-    if st.button("Deep Scan"):
-        res = requests.get(f"https://api.github.com/users/{username}")
-        if res.status_code == 200:
-            data = res.json()
-            st.metric("Recruiter Score", f"{round(data['public_repos']*0.5, 1)}/10")
-            st.write(f"**AI Summary:** {data.get('name')} is a consistent contributor with focus on {data.get('bio', 'software development')}.")
+    else:
+        st.info("Complete your first mission to see your analytics!")
