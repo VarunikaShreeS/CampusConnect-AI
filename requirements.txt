@@ -4,3 +4,4 @@ plotly
 requests
 qrcode
 pillow
+numpy
