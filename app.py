@@ -151,13 +151,28 @@ elif page == "🎁 Vault":
         """, unsafe_allow_html=True)
 
 # --- PAGE 5: STATS ---
-elif page == "📊 Stats":
+elif page == "📊 Stats" or page == "📊 Performance":
     st.title("📊 Impact Analytics")
-    df = pd.DataFrame(st.session_state.history)
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("Total XP", st.session_state.xp, delta=f"+{st.session_state.history[-1]['XP']}")
-        st.plotly_chart(px.pie(df, values='XP', names='Task', template="plotly_dark"), use_container_width=True)
-    with col2:
-        st.metric("Daily Streak", f"{st.session_state.streak} Days")
-        st.plotly_chart(px.bar(df, x='Date', y='XP', template="plotly_dark"), use_container_width=True)
+    
+    # Check if history exists to avoid IndexError
+    if len(st.session_state.history) > 0:
+        df = pd.DataFrame(st.session_state.history)
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            # Safe delta calculation
+            last_xp = st.session_state.history[-1]['XP']
+            st.metric("Total XP", st.session_state.xp, delta=f"+{last_xp}")
+            
+            # Safe Chart rendering
+            fig_pie = px.pie(df, values='XP', names='Task', template="plotly_dark")
+            st.plotly_chart(fig_pie, use_container_width=True)
+        
+        with col2:
+            st.metric("Daily Streak", f"{st.session_state.streak} Days")
+            fig_bar = px.bar(df, x='Date', y='XP', template="plotly_dark")
+            st.plotly_chart(fig_bar, use_container_width=True)
+    else:
+        # What the judge sees if they haven't done a mission yet
+        st.info("🚀 Your Impact Analytics will appear here once you complete your first mission!")
+        st.metric("Total XP", st.session_state.xp)
