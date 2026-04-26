@@ -3,98 +3,116 @@ import pandas as pd
 import plotly.express as px
 import time
 
-# 1. THEME & CONFIG
-st.set_page_config(page_title="CampusConnect Elite", page_icon="💎", layout="wide")
+# 1. PAGE SETUP
+st.set_page_config(page_title="CampusConnect Elite", page_icon="🛡️", layout="wide")
 
+# Custom CSS for Glassmorphism & Pro UI
 st.markdown("""
     <style>
-    .main { background-color: #0e1117; color: white; }
-    .stMetric { background: rgba(0, 255, 204, 0.05); border: 1px solid #00ffcc; border-radius: 15px; padding: 15px; }
-    .profile-box { padding: 20px; border-radius: 15px; background: #161b22; border: 1px solid #30363d; text-align: center; }
-    .rank-tag { background: #00ffcc; color: black; padding: 2px 10px; border-radius: 10px; font-weight: bold; font-size: 12px; }
+    .main { background-color: #0e1117; }
+    .stButton>button { width: 100%; border-radius: 20px; background: linear-gradient(45deg, #00ffcc, #0099ff); color: black; border: none; font-weight: bold; }
+    .task-card { background: #161b22; border: 1px solid #30363d; padding: 20px; border-radius: 15px; margin-bottom: 15px; }
+    .streak-fire { font-size: 24px; color: #ff4b4b; }
     </style>
     """, unsafe_allow_html=True)
 
-# Session States
+# 2. SESSION STATE MANAGEMENT (Login & Data)
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
-if 'xp' not in st.session_state: st.session_state.xp = 210
-if 'bio' not in st.session_state: st.session_state.bio = "Tech Enthusiast | Content Creator"
+if 'xp' not in st.session_state: st.session_state.xp = 150
+if 'streak' not in st.session_state: st.session_state.streak = 5
+if 'history' not in st.session_state: st.session_state.history = []
 
-# --- LOGIN GATE ---
+# --- LOGIN PAGE ---
 if not st.session_state.logged_in:
-    _, center, _ = st.columns([1, 1, 1])
-    with center:
-        st.title("🔒 Access Portal")
-        uid = st.text_input("Ambassador ID")
-        ups = st.text_input("Password", type="password")
-        if st.button("Login"):
-            if uid.upper() == "HARINI" and ups.upper() == "WIN":
+    cols = st.columns([1, 2, 1])
+    with cols[1]:
+        st.image("https://cdn-icons-png.flaticon.com/512/3061/3061341.png", width=100)
+        st.title("CampusConnect Login")
+        user = st.text_input("Ambassador ID")
+        pw = st.text_input("Password", type="password")
+        if st.button("Access Dashboard"):
+            if user == "HARINI" and pw == "WIN":
                 st.session_state.logged_in = True
                 st.rerun()
-            else: st.error("Access Denied")
+            else:
+                st.error("Invalid Credentials. (Hint: HARINI / WIN)")
     st.stop()
 
-# --- POST-LOGIN UI ---
+# --- MAIN APP (AFTER LOGIN) ---
 with st.sidebar:
-    # THE AVATAR IS BACK!
-    st.markdown("<div class='profile-box'>", unsafe_allow_html=True)
-    st.image("https://api.dicebear.com/7.x/avataaars/svg?seed=Harini", width=100)
-    st.markdown(f"### Harini")
-    st.markdown("<span class='rank-tag'>GOLD AMBASSADOR</span>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-    
+    st.markdown(f"## Welcome, Harini! 👋")
+    st.markdown(f"<p class='streak-fire'>🔥 {st.session_state.streak} Day Streak</p>", unsafe_allow_html=True)
     st.divider()
-    page = st.radio("Management Hub", ["🎯 Mission Control", "📊 Impact Analytics", "👤 Profile & Settings"])
-    st.divider()
-    if st.button("Log Out"):
+    page = st.radio("Navigation", ["🎯 Task Marketplace", "🏆 Hall of Fame", "📊 Program Analytics"])
+    if st.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()
 
-# --- PAGE 1: MISSION CONTROL ---
-if page == "🎯 Mission Control":
-    st.title("🚀 Active Missions")
-    col1, col2 = st.columns([2, 1])
-    
-    with col1:
-        with st.container(border=True):
-            st.subheader("LinkedIn Content Drive")
-            st.write("Post about CampusConnect features. Reward: **50 XP**")
-            url = st.text_input("Submission Link")
-            if st.button("Verify & Submit"):
-                if "http" in url:
-                    with st.status("Running AI Truth Scan...", expanded=True) as status:
-                        st.write("Checking link integrity...")
-                        time.sleep(1)
-                        st.write("Verifying metadata...")
-                        time.sleep(1)
-                        status.update(label="Verification Complete!", state="complete", expanded=False)
-                    st.session_state.xp += 50
-                    st.balloons()
-                    st.success("Points Reconciled! +50 XP")
-                else: st.error("Invalid URL detected by Truth Scanner.")
+# --- PAGE 1: TASK MARKETPLACE (Structured Assignment & Verification) ---
+if page == "🎯 Task Marketplace":
+    st.title("🎯 Available Missions")
+    st.caption("Complete missions, submit proof, and pass the AI verification audit.")
 
-# --- PAGE 2: ANALYTICS ---
-elif page == "📊 Impact Analytics":
-    st.title("📈 Performance Analytics")
-    df = pd.DataFrame({"User": ["Varun", "Praneetha", "Harini (You)", "Suba"], "XP": [450, 380, st.session_state.xp, 310]})
-    fig = px.bar(df, x='User', y='XP', color='XP', template="plotly_dark", title="Leaderboard Standings")
-    st.plotly_chart(fig, use_container_width=True)
+    # Task Data
+    tasks = [
+        {"id": 1, "title": "LinkedIn Brand Awareness", "reward": 50, "desc": "Post a summary of today's tech workshop."},
+        {"id": 2, "title": "Referral Drive", "reward": 100, "desc": "Onboard 5 new students to the community."},
+        {"id": 3, "title": "Tech Content Creation", "reward": 75, "desc": "Write a medium article on 'Future of AI'."}
+    ]
 
-# --- PAGE 3: PROFILE & SETTINGS ---
-elif page == "👤 Profile & Settings":
-    st.title("⚙️ Account Settings")
-    
-    tab1, tab2 = st.tabs(["Public Profile", "System Settings"])
-    
-    with tab1:
-        st.subheader("Edit Ambassador Persona")
-        new_bio = st.text_area("Your Bio", st.session_state.bio)
-        if st.button("Update Profile"):
-            st.session_state.bio = new_bio
-            st.toast("Profile Updated!")
+    for t in tasks:
+        with st.container():
+            st.markdown(f"""<div class='task-card'>
+                <h3>{t['title']} <span style='color:#00ffcc;'>+{t['reward']} XP</span></h3>
+                <p>{t['desc']}</p>
+            </div>""", unsafe_allow_html=True)
             
-    with tab2:
-        st.subheader("Preferences")
-        st.checkbox("Email Notifications for New Missions", value=True)
-        st.checkbox("Show my XP on Global Leaderboard", value=True)
-        st.selectbox("Default Dashboard View", ["Missions", "Analytics"])
+            with st.expander(f"Submit Proof for {t['title']}"):
+                link = st.text_input("Verification URL (LinkedIn/Drive/GitHub)", key=f"link_{t['id']}")
+                if st.button("Submit Mission", key=f"btn_{t['id']}"):
+                    # TRUTH VERIFICATION LOGIC
+                    if "http" in link and (len(link) > 15): 
+                        with st.spinner("AI Auditor verifying proof..."):
+                            time.sleep(2) # Simulate verification
+                        st.session_state.xp += t['reward']
+                        st.session_state.history.append({"task": t['title'], "xp": t['reward']})
+                        st.balloons()
+                        st.success(f"Verified! {t['reward']} XP added to your profile.")
+                    else:
+                        st.error("Submission Failed: The link provided does not look like a valid proof URL. Please check and try again.")
+
+# --- PAGE 2: HALL OF FAME (Gamification) ---
+elif page == "🏆 Hall of Fame":
+    st.title("🏆 Hall of Fame")
+    
+    # Milestone Awards
+    st.subheader("Your Achievements")
+    cols = st.columns(3)
+    with cols[0]:
+        st.markdown("🏅 **Early Bird**\n*First mission complete*")
+    with cols[1]:
+        color = "#00ffcc" if st.session_state.xp >= 200 else "#30363d"
+        st.markdown(f"<div style='border: 2px solid {color}; padding:10px; border-radius:10px;'>🚀 **Rising Star**<br>Reach 200 XP</div>", unsafe_allow_html=True)
+    with cols[2]:
+        st.markdown("🔥 **Consistent**\n*5 Day Streak maintained*")
+
+    # Leaderboard
+    st.divider()
+    leaderboard_data = pd.DataFrame({
+        "Ambassador": ["Varun", "Praneetha", "Harini (You)", "Suba"],
+        "XP": [450, 380, st.session_state.xp, 310]
+    }).sort_values(by="XP", ascending=False)
+    st.table(leaderboard_data)
+
+# --- PAGE 3: ANALYTICS ---
+elif page == "📊 Program Analytics":
+    st.title("📊 Your Growth Engine")
+    st.metric("Total Level Progress", f"{st.session_state.xp} XP", delta=f"{st.session_state.streak} Day Streak")
+    
+    # Visualization
+    if st.session_state.history:
+        history_df = pd.DataFrame(st.session_state.history)
+        fig = px.pie(history_df, values='xp', names='task', title="XP Contribution by Category", template="plotly_dark")
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Complete your first mission to see your analytics!")
