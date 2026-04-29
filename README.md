@@ -4,8 +4,6 @@ The Ultimate Gamified Portal for Campus Ambassadors.
 
 CampusConnect AI is a premium Streamlit-based dashboard designed to automate and gamify community management. It empowers ambassadors with AI-driven content tools, real-time leaderboard tracking, and verified digital identification.
 
-Project Demo
-https://github.com/user-attachments/assets/d8c2cc26-d5e6-4da5-88d1-5a6862dec72e
 
 EXPERIENCE THE LIVE APPLICATION HERE !
 https://campusconnect-ai-txf3fk9vkeyr9cyronaxhx.streamlit.app/
